@@ -24,9 +24,12 @@ class BerlinItem(scrapy.Item):
                             self['time'].strftime('%Y/%m/%d'),
                             '%s-%s.%s'%(self['source_name'], self['source_id'], extension)) 
     pass
- 
+
+
+def normalize_space(value):
+    return value.replace("\n", " ").replace("  ", " ")
 
 class BerlinItemLoader(ItemLoader):
     default_item_class = BerlinItem
     default_output_processor = TakeFirst()
-    
+    body_in = MapCompose(normalize_space)
