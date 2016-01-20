@@ -1,3 +1,4 @@
 /.python-version
 /.scrapy/
 *.pyc
+/scrape.sh

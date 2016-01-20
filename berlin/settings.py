@@ -51,7 +51,7 @@ SPIDER_MIDDLEWARES = {
 # Enable or disable downloader middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
-    # 'scrapy.downloadermiddlewares.httpcache.HttpCacheMiddleware': 543
+    'scrapy.downloadermiddlewares.httpcache.HttpCacheMiddleware': 543
     # 'berlin.middlewares.MyCustomDownloaderMiddleware': 543,
 }
 
@@ -64,7 +64,8 @@ DOWNLOADER_MIDDLEWARES = {
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'berlin.pipelines.WriteRssItemPipeline': 300,
+    'berlin.pipelines.WriteRssPipeline': 400,
+    'berlin.pipelines.PostWordpressPipeline': 301,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

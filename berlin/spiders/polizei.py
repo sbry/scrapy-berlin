@@ -28,7 +28,7 @@ class PolizeiSpider(scrapy.Spider):
         item_loader.add_css('body', 'div.textile')
         ##
         # the simple parts
-        parts = { 'author': 'Polizei Berlin', 'url': response.url, 'source_name': self.name}
+        parts = { 'place': 'Berlin', 'author': 'Polizei Berlin', 'url': response.url, 'source_name': self.name}
         ##
         # extract the id from the url
         # http://www.berlin.de/polizei/polizeimeldungen/pressemitteilung.434878.php
