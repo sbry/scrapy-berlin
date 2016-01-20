@@ -23,7 +23,6 @@ class PostWordpressPipeline(object):
                              os.getenv('SCRAPY_WP_PASSWORD'))
         pass
     def close_spider(self, spider):
-        
         pass
     def process_item(self, item, spider):
         wp_filename = item.filename('wp')
@@ -41,24 +40,20 @@ class PostWordpressPipeline(object):
             except OSError:
                 pass
             post = WordPressPost()
-            post.title = '%s %s: "%s"'%(item['source_name'].title(), item['place'].title(), item['headline']),
+            post.title = item['headline']
             post.content = "%s %s"%(item['time'].strftime("%d.%m.%Y"), item['body'])
             post.terms_names = {
-                'category': [item['source_name'], item['place']],
+                'category': [item['source_name'].title()],
+                'post_tag': [item['place'].title()]
             }
             post.link = item['url']
             post.date = item['time']
             ##
-            # we have to create a user if necessary
-            user = self.client.call(users.GetUserInfo())
+            # @todo we have to create a user if necessary
             # <WordPressUser: max>
-            post.user = user.id
-            ##
-            # and post
+            # post.user = self.client.call(users.GetUserInfo())
             post.post_status = 'publish'
             post.id = self.client.call(posts.NewPost(post))
-            ##
-            # and save
             with open(wp_filename, 'w') as fh:
                 pickle.dump(post, fh)
                 fh.close()
