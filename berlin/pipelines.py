@@ -30,8 +30,8 @@ class PostWordpressPipeline(object):
             with open(wp_filename) as fh:
                 post = pickle.load(fh)
                 fh.close()
-                if False:
-                    post.post_status = 'publish'
+                if True:
+                    post.date = item['time']
                     self.client.call(posts.EditPost(post.id, post))
             pass
         else:
