@@ -20,8 +20,10 @@ class PolizeiSpider(scrapy.Spider):
             full_url = rss_item.xpath('link/text()').extract()[0]
             request = scrapy.Request(full_url, callback=self.parse_item_page)
             ##
-            # send the timestamp in "meta" (recommended procedure)
+            # send the timestamp in "meta" (recommended procedure)            
             pub_date = rss_item.xpath('pubDate/text()').extract()[0]
+            ##
+            # From: http://stackoverflow.com/questions/31005207/transform-pubdate-to-string-in-python
             pub_date = "-".join(pub_date.split()[1:5])
             request.meta['time'] = datetime.strptime(pub_date , "%d-%b-%Y-%H:%M:%S")
             ##
