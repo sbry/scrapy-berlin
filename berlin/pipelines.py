@@ -41,6 +41,7 @@ class PostWordpressPipeline(object):
                 pass
             post = WordPressPost()
             post.title = item['headline']
+            # &#x1f517; link symbol
             post.content = "%s %s"%(item['time'].strftime("%d.%m.%Y"), item['body'])
             post.terms_names = {
                 'category': [item['source_name'].title()],
