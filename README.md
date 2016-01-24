@@ -11,8 +11,7 @@ Berlin-News for RSS with [Scrapy](http://www.scrapy.org)
 
 ## Installation
 
-+ pyenv with a python2 (I use 2.7.9 at this point, scrapy does not work
-with python3 because twisted does not work with python3)
++ python2. I use 2.7.9 at this point. Right now scrapy does not work with python3 because twisted does not work with python3.
 + pip install -r requirements.txt
 + scrape crawl bvg; scrape crawl polizei
 

@@ -2,3 +2,4 @@
 /.scrapy/
 *.pyc
 /scrape.sh
+/scrape.log
