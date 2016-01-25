@@ -29,11 +29,18 @@ class BerlinItem(scrapy.Item):
 def normalize_space(value):
     return value.replace("\n", " ").replace("  ", " ")
 
+def normalize_place(value):
+    if not ( value in ['False']
+             or value.startswith('Gemeinsam')
+             or value.startswith('Tatzeit' ) ):
+        yield value.replace(" ", "").replace(',', '/')
+
 class BerlinItemLoader(ItemLoader):
     default_item_class = BerlinItem
     default_output_processor = TakeFirst()
     body_in = MapCompose(normalize_space)
-
+    place_in = MapCompose(normalize_place)
+    place_out = Join()
 
 if __name__ == '__main__':
     print BerlinItem.fields

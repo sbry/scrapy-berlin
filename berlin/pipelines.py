@@ -10,6 +10,12 @@ import os
 from wordpress_xmlrpc import Client, WordPressPost
 from wordpress_xmlrpc.methods import posts,users
 import pickle
+##
+#
+def get_place_post_tag_names(value):
+    return [ word for word in value.split("/") if word ]
+##
+# KeyError "place"
 class PostWordpressPipeline(object):
     """
     use xmlprc of wordpress to synchronize via push
@@ -26,13 +32,18 @@ class PostWordpressPipeline(object):
         pass
     def process_item(self, item, spider):
         wp_filename = item.filename('wp')
-        if(os.path.exists(wp_filename)):
+        if os.path.exists(wp_filename):
             with open(wp_filename) as fh:
                 post = pickle.load(fh)
                 fh.close()
                 if True:
-                    post.date = item['time']
+                    post.terms_names = {
+                        'category': [item['source_name'].title()],
+                        'post_tag': get_place_post_tag_names(item['place'])
+                    }
                     self.client.call(posts.EditPost(post.id, post))
+                    pass
+                pass
             pass
         else:
             try:
@@ -44,7 +55,7 @@ class PostWordpressPipeline(object):
             post.content = item['body']
             post.terms_names = {
                 'category': [item['source_name'].title()],
-                'post_tag': [item['place'].title()]
+                'post_tag': get_place_post_tag_names(item['place'])
             }
             post.link = item['url']
             post.date = item['time']
@@ -109,7 +120,7 @@ class WriteRssPipeline(object):
         ##
         # for now we just always write the file since it might be an update
         xml_filename = item.filename('xml')
-        if(os.path.exists(xml_filename)):
+        if os.path.exists(xml_filename):
             pass
         else:
             try:
@@ -120,3 +131,10 @@ class WriteRssPipeline(object):
                 fh.write(etree.tostring(xml, pretty_print=True))
                 fh.close()
         return item
+
+
+
+if __name__ == '__main__':
+    print get_place_wordpress_tag_names("f/h/")
+    print get_place_wordpress_tag_names("Gemeinsam/")
+    pass
