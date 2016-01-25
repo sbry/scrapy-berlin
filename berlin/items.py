@@ -21,7 +21,7 @@ class BerlinItem(scrapy.Item):
     def filename(self, extension = 'xml'):
         """The item's filename is used for keeping state"""
         return os.path.join(os.getenv('SCRAPY_DATADIR', '../scrapy-items'),
-                            self['time'].strftime('%Y/%m/%d'),
+                            self['time'].strftime('%Y'),
                             '%s-%s.%s'%(self['source_name'], self['source_id'], extension)) 
     pass
 
@@ -33,3 +33,8 @@ class BerlinItemLoader(ItemLoader):
     default_item_class = BerlinItem
     default_output_processor = TakeFirst()
     body_in = MapCompose(normalize_space)
+
+
+if __name__ == '__main__':
+    print BerlinItem.fields
+    pass
