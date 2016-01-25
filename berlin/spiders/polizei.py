@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import scrapy
 from scrapy.cmdline import execute
-from berlin.items import BerlinItemLoader
+from berlin.items import BerlinItemLoader, BerlinItem
 ##
 # for extracting the id        
 import re
@@ -20,6 +20,12 @@ class PolizeiSpider(scrapy.Spider):
             full_url = rss_item.xpath('link/text()').extract()[0]
             request = scrapy.Request(full_url, callback=self.parse_item_page)
             ##
+            # extract the id from the url
+            # http://www.berlin.de/polizei/polizeimeldungen/pressemitteilung.434878.php
+            match = re.search('(\d+)\.php$', full_url)
+            request.meta['source_id'] = match.group(1)
+            request.meta['source_name'] = self.name
+            ##
             # send the timestamp in "meta" (recommended procedure)            
             pub_date = rss_item.xpath('pubDate/text()').extract()[0]
             ##
@@ -27,8 +33,9 @@ class PolizeiSpider(scrapy.Spider):
             pub_date = "-".join(pub_date.split()[1:5])
             request.meta['time'] = datetime.strptime(pub_date , "%d-%b-%Y-%H:%M:%S")
             ##
-            # does not work (ValueError: 'z' is a bad directive in format '%a, %d %b %Y %H:%M:%S %z')
+            # direct matching does not work even though it should imo
             # request.meta['time'] = datetime.strptime(pub_date , "%a, %d %b %Y %H:%M:%S %z")
+            # -> ValueError: 'z' is a bad directive in format '%a, %d %b %Y %H:%M:%S %z'
             yield request
         pass
     def parse_item_page(self, response):
@@ -37,28 +44,17 @@ class PolizeiSpider(scrapy.Spider):
         selector = response.css('div.article')
         item_loader = BerlinItemLoader(selector = selector)
         ##
+        # the simple parts
+        parts = {k:v for k,v in response.meta.iteritems() if k in BerlinItem.fields}
+        parts['place'] = 'Berlin'
+        parts['author'] = 'Polizei Berlin'
+        parts['url'] = response.url
+        item_loader.add_value(None, parts)
+        ##
         #
         item_loader.add_css('headline', 'h1.title::text')
         item_loader.add_css('place', 'div.polizeimeldung:nth-child(2)::text')
         item_loader.add_css('body', 'div.textile')
-        ##
-        # the simple parts
-        parts = { 'place': 'Berlin', 'author': 'Polizei Berlin', 'url': response.url, 'source_name': self.name}
-        ##
-        # extract the id from the url
-        # http://www.berlin.de/polizei/polizeimeldungen/pressemitteilung.434878.php
-        match = re.search('(\d+)\.php$', response.url)
-        parts['source_id'] = match.group(1)
-        ##
-        # parse time time
-        if response.meta['time']:
-            parts['time'] = response.meta['time']
-        else:
-            raw_time = selector.css('div.polizeimeldung:nth-child(1)::text')
-            parts['time'] = datetime.strptime(raw_time.extract()[0], 'Polizeimeldung vom %d.%m.%Y')
-        ##
-        # and add the parts
-        item_loader.add_value(None, parts)
         return item_loader.load_item()
     pass
 
