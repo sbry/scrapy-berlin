@@ -51,6 +51,7 @@ SPIDER_MIDDLEWARES = {
 # Enable or disable downloader middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
+    'berlin.middlewares.NotAgainMiddleware': 1,
     'scrapy.downloadermiddlewares.httpcache.HttpCacheMiddleware': 543
     # 'berlin.middlewares.MyCustomDownloaderMiddleware': 543,
 }
