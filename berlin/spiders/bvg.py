@@ -47,7 +47,6 @@ class BvgSpider(scrapy.Spider):
           = [ x.xpath('string(.)').extract() for x in selector.css('.moment-info dd') ]
         ##
         # small effort to redeem the exact line (which is buried in the css-class)
-        place_span = selector.css('.icon-t')
         # at least two, or we take the fallback
         better_place = selector.css('dd .icon-t').xpath('@class').re('--(..+)')
         if better_place:
