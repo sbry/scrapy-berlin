@@ -12,6 +12,7 @@ from w3lib.url import url_query_parameter
 #
 import os
 
+import logging
 
 class BvgSpider(scrapy.Spider):
     name = "bvg"
@@ -24,12 +25,15 @@ class BvgSpider(scrapy.Spider):
             full_url = content.urljoin(href.extract())
             request = scrapy.Request(full_url, callback=self.parse_item_page)
             ##
-            # we save as much as we can in meta
-            request.meta['source_id'] = url_query_parameter(full_url, 'id')
-            request.meta['source_name'] = self.name
+            # we save as much as we can in parts which goes into meta
+            parts = {}
+            parts['source_id'] = url_query_parameter(full_url, 'id')
+            parts['source_name'] = self.name
             # <div class="">24.01.2016 um 17:00 Uhr • Peterpower</div>
             pub_date = content.css('.moment-table__datetime::text').extract()[0].partition(' Uhr')[0]
-            request.meta['time'] = datetime.strptime(pub_date , "%d.%m.%Y um %H:%M")
+            parts['time'] = datetime.strptime(pub_date , "%d.%m.%Y um %H:%M")
+            # here
+            request.meta['parts'] = parts
             yield request
         pass
     def parse_item_page(self, response):
@@ -37,7 +41,7 @@ class BvgSpider(scrapy.Spider):
         item_loader = BerlinItemLoader(selector = selector)
         ##
         # the simple parts
-        parts = {k:v for k,v in response.meta.iteritems() if k in BerlinItem.fields}
+        parts = response.meta['parts']
         parts['url'] = response.url
         parts['place'],raw_time,unwanted,parts['author'],parts['headline'] \
           = [ x.xpath('string(.)').extract() for x in selector.css('.moment-info dd') ]

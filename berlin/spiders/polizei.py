@@ -22,20 +22,22 @@ class PolizeiSpider(scrapy.Spider):
             ##
             # extract the id from the url
             # http://www.berlin.de/polizei/polizeimeldungen/pressemitteilung.434878.php
+            parts = dict()
             match = re.search('(\d+)\.php$', full_url)
-            request.meta['source_id'] = match.group(1)
-            request.meta['source_name'] = self.name
+            parts['source_id'] = match.group(1)
+            parts['source_name'] = self.name
             ##
             # send the timestamp in "meta" (recommended procedure)            
             pub_date = rss_item.xpath('pubDate/text()').extract()[0]
             ##
             # From: http://stackoverflow.com/questions/31005207/transform-pubdate-to-string-in-python
             pub_date = "-".join(pub_date.split()[1:5])
-            request.meta['time'] = datetime.strptime(pub_date , "%d-%b-%Y-%H:%M:%S")
+            parts['time'] = datetime.strptime(pub_date , "%d-%b-%Y-%H:%M:%S")
             ##
             # direct matching does not work even though it should imo
             # request.meta['time'] = datetime.strptime(pub_date , "%a, %d %b %Y %H:%M:%S %z")
             # -> ValueError: 'z' is a bad directive in format '%a, %d %b %Y %H:%M:%S %z'
+            request.meta['parts'] = parts
             yield request
         pass
     def parse_item_page(self, response):
@@ -45,7 +47,7 @@ class PolizeiSpider(scrapy.Spider):
         item_loader = BerlinItemLoader(selector = selector)
         ##
         # the simple parts
-        parts = {k:v for k,v in response.meta.iteritems() if k in BerlinItem.fields}
+        parts = response.meta['parts']
         parts['place'] = 'Berlin'
         parts['author'] = 'Polizei Berlin'
         parts['url'] = response.url
