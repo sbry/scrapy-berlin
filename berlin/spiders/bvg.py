@@ -45,6 +45,15 @@ class BvgSpider(scrapy.Spider):
         parts['url'] = response.url
         parts['place'],raw_time,unwanted,parts['author'],parts['headline'] \
           = [ x.xpath('string(.)').extract() for x in selector.css('.moment-info dd') ]
+        ##
+        # small effort to redeem the exact line (which is buried in the css-class)
+        place_span = selector.css('.icon-t')
+        # at least two, or we take the fallback
+        better_place = selector.css('dd .icon-t').xpath('@class').re('--(..+)')
+        if better_place:
+            parts['place'] = better_place
+        ##
+        # and load
         item_loader.add_value(None, parts)
         ##
         #
