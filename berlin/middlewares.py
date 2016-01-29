@@ -1,7 +1,7 @@
 
 from berlin.items import BerlinItem
 from scrapy.exceptions import IgnoreRequest
-import os
+import os, logging
 class NotAgainMiddleware():
     def process_request(self, request, spider):
         """in request.meta it must be defined time source_id and source_name"""
