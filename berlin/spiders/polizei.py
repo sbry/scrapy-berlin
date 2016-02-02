@@ -17,26 +17,28 @@ class PolizeiSpider(scrapy.Spider):
     )       
     def parse(self, response):
         for rss_item in response.xpath('//item'):
-            full_url = rss_item.xpath('link/text()').extract()[0]
-            request = scrapy.Request(full_url, callback=self.parse_item_page)
+            parts = {}
+            source_url = rss_item.xpath('link/text()').extract_first()
+            parts['source_url'] = source_url
+
             ##
             # extract the id from the url
             # http://www.berlin.de/polizei/polizeimeldungen/pressemitteilung.434878.php
-            parts = dict()
-            match = re.search('(\d+)\.php$', full_url)
+            match = re.search('(\d+)\.php$', source_url)
             parts['source_id'] = match.group(1)
             parts['source_name'] = self.name
             ##
             # send the timestamp in "meta" (recommended procedure)            
-            pub_date = rss_item.xpath('pubDate/text()').extract()[0]
+            pub_date = rss_item.xpath('pubDate/text()').extract_first()
             ##
             # From: http://stackoverflow.com/questions/31005207/transform-pubdate-to-string-in-python
             pub_date = "-".join(pub_date.split()[1:5])
             parts['time'] = datetime.strptime(pub_date , "%d-%b-%Y-%H:%M:%S")
-            ##
+            #
             # direct matching does not work even though it should imo
             # request.meta['time'] = datetime.strptime(pub_date , "%a, %d %b %Y %H:%M:%S %z")
             # -> ValueError: 'z' is a bad directive in format '%a, %d %b %Y %H:%M:%S %z'
+            request = scrapy.Request(source_url, callback=self.parse_item_page)
             request.meta['parts'] = parts
             yield request
         pass
@@ -48,15 +50,19 @@ class PolizeiSpider(scrapy.Spider):
         ##
         # the simple parts
         parts = response.meta['parts']
-        parts['place'] = 'Berlin'
+        parts['place'] = self.parse_item_page_place(response)
         parts['author'] = 'Polizei Berlin'
-        parts['url'] = response.url
         item_loader.add_value(None, parts)
         ##
         #
         item_loader.add_css('headline', 'h1.title::text')
-        item_loader.add_css('place', 'div.polizeimeldung:nth-child(2)::text')
         item_loader.add_css('body', 'div.textile')
         return item_loader.load_item()
+    def parse_item_page_place(self, response):
+        """we know nothing so we do default and fallback and might add here when stuff goes wrong"""
+        place = response.css('div.polizeimeldung:nth-child(2)::text').extract_first()
+        if not place:
+            place = response.css('.textile>p>strong::text').extract_first()        
+        return place.strip(' ()')
     pass
 

@@ -64,14 +64,14 @@ DOWNLOADER_MIDDLEWARES = {
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'berlin.pipelines.WriteRssPipeline': 400,
-    'berlin.pipelines.PostWordpressPipeline': 301,
+    'berlin.pipelines.PicklePipeline': 400,
+    'berlin.pipelines.PublishPipeline': 401,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See http://doc.scrapy.org/en/latest/topics/autothrottle.html
 # NOTE: AutoThrottle will honour the standard settings for concurrency and delay
-AUTOTHROTTLE_ENABLED=True
+AUTOTHROTTLE_ENABLED=False
 # The initial download delay
 AUTOTHROTTLE_START_DELAY=5
 # The maximum download delay to be set in case of high latencies

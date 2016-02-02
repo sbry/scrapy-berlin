@@ -12,35 +12,24 @@ from scrapy.loader.processors import Join, MapCompose, TakeFirst, Identity
 class BerlinItem(scrapy.Item):
     source_id = scrapy.Field()
     source_name = scrapy.Field()
+    source_url = scrapy.Field()
     headline = scrapy.Field()
     time = scrapy.Field()
     place = scrapy.Field()
     author = scrapy.Field()
     body = scrapy.Field()
-    url = scrapy.Field()
-    def filename(self, extension = 'xml'):
-        """The item's filename is used for keeping state"""
+    def filename(self, extension = 'p'):
+        """The item's filename is used for serializing"""
         return os.path.join(os.getenv('SCRAPY_DATADIR', '../scrapy-items'),
-                            self['time'].strftime('%Y'),
                             '%s-%s.%s'%(self['source_name'], self['source_id'], extension)) 
     pass
-
-
-def normalize_space(value):
-    return value.replace("\n", " ").replace("  ", " ")
-
-def normalize_place(value):
-    if not ( value in ['False']
-             or value.startswith('Gemeinsam')
-             or value.startswith('Tatzeit' ) ):
-        yield value.replace(" ", "").replace(',', '/')
 
 class BerlinItemLoader(ItemLoader):
     default_item_class = BerlinItem
     default_output_processor = TakeFirst()
-    body_in = MapCompose(normalize_space)
-    place_in = MapCompose(normalize_place)
-    place_out = Join()
+    body_in = MapCompose(lambda v: v.replace("\n", " ").replace("  ", " "))
+    place_in = MapCompose(lambda v: v.strip().replace(" - ", "-").replace(',', '/'))
+    place_out = Join(separator = '/')
 
 if __name__ == '__main__':
     print BerlinItem.fields

@@ -9,7 +9,7 @@ class NotAgainMiddleware():
             parts = request.meta['parts']
         except KeyError:
             return None
-        if all (k in parts for k in ("source_name","source_id", "time")):
+        if all (k in parts for k in ("source_name","source_id")):
             i = BerlinItem(parts)
             if(os.path.exists(i.filename())):
                 logging.log(logging.WARNING, "Ignoring URL %s"%request.url)
