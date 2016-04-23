@@ -3,3 +3,5 @@
 *.pyc
 /scrape.sh
 /scrape.log
+/.scraperc
+/messages.log

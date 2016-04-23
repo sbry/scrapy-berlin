@@ -1,0 +1,6 @@
+export SCRAPY_WP_USERNAME=
+export SCRAPY_WP_PASSWORD=
+export SCRAPY_WP_RPCURL=/xmlrpc.php
+export SCRAPY_ROOT="."
+export SCRAPY_DATADIR=$SCRAPY_ROOT/../scrapy-items
+export SCRAPY_SSH=
