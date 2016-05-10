@@ -199,6 +199,9 @@ class AugmentBerlinStreetsPipeline():
         """we grep on a file to decide if a street matches, 
         if it does we write it into a new datastructure which 
         we save in a separate directory"""
+        # benchmarks are clear, matching simple takes 44s per item and 16 with the 
+        # number of processes = number of cpu 
+        # and 17 with the number of processes = number of cpu * 2
         if False:
             matched_streets = self.process_item_match_streets_simple(item)
         else:
@@ -212,8 +215,10 @@ class AugmentBerlinStreetsPipeline():
                 matched_streets.append(street)
         return matched_streets
     def process_item_match_streets_pooled(self, item):
-        from multiprocessing import Pool
-        p = Pool(8)
+        import multiprocessing
+        # seems the ideal value
+        processes = multiprocessing.cpu_count()
+        p = multiprocessing.Pool(processes = processes)
         boolean_matches = p.map(match_street_helper, [(item, street,) for street in self.streets])
         # we need to return those streets where the grep returned true
         # first time i use zip: quite a success
