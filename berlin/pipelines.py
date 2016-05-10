@@ -165,6 +165,19 @@ def read_berlin_streets():
             for street in json.load(fh):
                 yield street 
             fh.close()
+def match_street(item, street):
+        """match a single street this whole thing takes forever"""
+        cmd = match_street_cmd(item, street)
+        # print cmd
+        return not(subprocess.call(cmd))
+def match_street_helper(args):
+    return match_street(*args)
+def match_street_cmd(item, street):
+    disjunction = list()
+    # partial matching is better for now, half the string or at least 5 letters
+    disjunction.append(re.escape(street[u'title'][:max((len(street[u'title']) / 2), 13)]))
+    filename = item.filename('xml')
+    return ['/usr/bin/grep', '-qEi', '(' + '|'.join(disjunction) + ')', filename]
 # #
 #
 from items import BerlinItem
@@ -186,15 +199,28 @@ class AugmentBerlinStreetsPipeline():
         """we grep on a file to decide if a street matches, 
         if it does we write it into a new datastructure which 
         we save in a separate directory"""
+        if False:
+            matched_streets = self.process_item_match_streets_simple(item)
+        else:
+            matched_streets = self.process_item_match_streets_pooled(item)
+        self.process_item_match_streets_save(item, matched_streets)
+        return item
+    def process_item_match_streets_simple(self, item):
         matched_streets = list()
         for street in self.streets:
-            if self.match_street(item, street):
-                print street
+            if match_street(item, street):
                 matched_streets.append(street)
+        return matched_streets
+    def process_item_match_streets_pooled(self, item):
+        from multiprocessing import Pool
+        p = Pool(8)
+        boolean_matches = p.map(match_street_helper, [(item, street,) for street in self.streets])
+        # we need to return those streets where the grep returned true
+        # first time i use zip: quite a success
+        return [street for street, matched in zip(self.streets, boolean_matches) if matched]
+    def process_item_match_streets_save(self, item, matched_streets):
         if(not len(matched_streets)):
             return True;
-        # #
-        # and save the results in the first pickled auxfiles
         pickle_filename = item.filename('p1')
         try:
             os.makedirs(os.path.dirname(pickle_filename))
@@ -203,19 +229,6 @@ class AugmentBerlinStreetsPipeline():
         with open(pickle_filename, 'w') as fh:
             pickle.dump(list(matched_streets), fh)
             fh.close()
-        return item
-        pass
-    def match_street(self, item, street):
-        """match a single street this whole thing takes forever"""
-        cmd = self.match_street_cmd(item, street)
-        # print cmd
-        return not(subprocess.call(cmd))
-    def match_street_cmd(self, item, street):
-        disjunction = list()
-        # partial matching is better for now, half the string or at least 5 letters
-        disjunction.append(re.escape(street[u'title'][:max((len(street[u'title']) / 2), 13)]))
-        filename = item.filename('xml')
-        return ['/usr/bin/grep', '-qEi', '(' + '|'.join(disjunction) + ')', filename]
     @classmethod
     def filenames(cls):
         """p1 for the first pickled augmentation"""
