@@ -11,7 +11,7 @@ from berlin.items import BerlinItem
 if __name__ == '__main__':
     pp = pipelines.AugmentBerlinStreetsPipeline()
     for item in pipelines.PicklePipeline.unpickled_items():
-pp.process_item(item,{})
+        pp.process_item(item, {})
 
     
     
