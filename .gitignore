@@ -5,3 +5,6 @@
 /scrape.log
 /.scraperc
 /messages.log
+/.project
+/.pydevproject
+/.settings/

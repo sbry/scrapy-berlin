@@ -6,8 +6,9 @@
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 import os, pickle
 from wordpress_xmlrpc import Client, WordPressPost
-from wordpress_xmlrpc.methods import posts,users
-##
+from wordpress_xmlrpc.methods import posts, users
+import cmd
+# #
 #
 def get_place_post_tag_names(value):
     return [ word for word in value.split("/") if word ]
@@ -31,7 +32,7 @@ class PublishPipeline(object):
             with open(wp_filename) as fh:
                 post = pickle.load(fh)
                 fh.close()
-                ##
+                # #
                 # Here one might update or fix things
                 if False:
                     post.terms_names = {
@@ -80,7 +81,7 @@ class PicklePipeline(object):
     def close_spider(self, spider):
         pass
     def process_item(self, item, spider):
-        pickle_filename = item.filename()
+        pickle_filename = item.filename('p')
         try:
             os.makedirs(os.path.dirname(pickle_filename))
         except OSError:
@@ -90,9 +91,18 @@ class PicklePipeline(object):
             fh.close()
         return item
     pass
+    @classmethod
+    def filenames(cls):
+        return glob.glob(os.getenv('SCRAPY_DATADIR') + '/p/*.p')
+    @classmethod
+    def unpickled_items(cls):
+        for pickle_filename in cls.filenames():
+            with open(pickle_filename, 'r') as fh:
+                item = pickle.load(fh)
+                fh.close()
+                yield item
 
-
-##
+# #
 # For the local saving as rss-fragment: for text-analysis
 from lxml import etree
 from lxml.builder import E, ElementMaker
@@ -115,18 +125,18 @@ class WriteRssPipeline(object):
     def close_spider(self, spider):
         pass
     def process_item(self, item, spider):
-        ##
+        # #
         # need this namespace
-        dc = ElementMaker(	nsmap={'dc' : "http://purl.org/dc/elements/1.1/"})
-        ##
+        dc = ElementMaker(nsmap={'dc' : "http://purl.org/dc/elements/1.1/"})
+        # #
         # ah python: good to be back
         xml = E.item(
-            E.link(item['url']),
-            E.guid(item['url'], is_permalink='false'),
+            E.link(item['source_url']),
+            E.guid(item['source_url'], is_permalink='false'),
             E.pubDate(item['time'].strftime("%a, %d %b %Y %H:%M:%S %z")),
             E.title(item['headline']),
-            dc.creator(item['author']),
-            ##
+            dc.creator(item['source_name']),
+            # #
             # the categories are mostly not printed in the rss-reader,
             # which is why we prepend to body as well
             E.category(item['source_name']),
@@ -134,17 +144,83 @@ class WriteRssPipeline(object):
             E.category(item['time'].strftime("%d.%m.%Y"), domain='date'),
             E.description(item['body'])
         )
-        ##
+        # #
         # for now we just always write the file since it might be an update
         xml_filename = item.filename('xml')
         with open(xml_filename, 'w') as fh:
             fh.write(etree.tostring(xml, pretty_print=True))
             fh.close()
         return item
+    @classmethod
+    def filenames(cls):
+        return glob.glob(os.getenv('SCRAPY_DATADIR') + '/xml/*.xml')
 
+import glob, json, subprocess
+def read_berlin_streets():
+    """in every file there is a json-list of streets, we just need a flat list"""
+    pattern = os.getenv('SCRAPY_ROOT', '.') + '/../streetname-scraper/data/*.json'
+    for f in glob.glob(pattern):
+        with open(f) as fh:    
+            # flatten the lists
+            for street in json.load(fh):
+                yield street 
+            fh.close()
+# #
+#
+from items import BerlinItem
+import re
 
+class AugmentBerlinStreetsPipeline():
+    """the plan is to match streets"""
+    # #
+    # takes a long time we try to limit it to once per session
+    streets = list(read_berlin_streets())
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls()
+    def open_spider(self, spider):
+        pass
+    def close_spider(self, spider):
+        pass
+    def process_item(self, item, spider):
+        """we grep on a file to decide if a street matches, 
+        if it does we write it into a new datastructure which 
+        we save in a separate directory"""
+        matched_streets = list()
+        for street in self.streets:
+            if self.match_street(item, street):
+                print street
+                matched_streets.append(street)
+        if(not len(matched_streets)):
+            return True;
+        # #
+        # and save the results in the first pickled auxfiles
+        pickle_filename = item.filename('p1')
+        try:
+            os.makedirs(os.path.dirname(pickle_filename))
+        except OSError:
+            pass
+        with open(pickle_filename, 'w') as fh:
+            pickle.dump(list(matched_streets), fh)
+            fh.close()
+        return item
+        pass
+    def match_street(self, item, street):
+        """match a single street this whole thing takes forever"""
+        cmd = self.match_street_cmd(item, street)
+        # print cmd
+        return not(subprocess.call(cmd))
+    def match_street_cmd(self, item, street):
+        disjunction = list()
+        # partial matching is better for now, half the string or at least 5 letters
+        disjunction.append(re.escape(street[u'title'][:max((len(street[u'title']) / 2), 13)]))
+        filename = item.filename('xml')
+        return ['/usr/bin/grep', '-qEi', '(' + '|'.join(disjunction) + ')', filename]
+    @classmethod
+    def filenames(cls):
+        """p1 for the first pickled augmentation"""
+        return glob.glob(os.getenv('SCRAPY_DATADIR') + '/p1/*.p1')
+    pass
 
 if __name__ == '__main__':
-    print get_place_wordpress_tag_names("f/h/")
-    print get_place_wordpress_tag_names("Gemeinsam/")
     pass

@@ -1,5 +1,6 @@
 ##
 # settings
+pushd $(dirname $0)
 source .scraperc
 ##
 # and run the stuff
@@ -12,7 +13,6 @@ case $1 in
         popd
         ;;
     *)
-        pushd $(dirname $0)
         ##
         # important for the libraries
         export PYTHONPATH=$PWD
@@ -25,9 +25,9 @@ case $1 in
                 python run/$1
                 ;;
         esac
-        popd
+
 esac
 cmd_end=$(date +%s)
 cmd_duration=$(($cmd_end-$cmd_begin))
 echo $(date) "$0 $1  # ${cmd_duration}s" | tee -a messages.log
-
+popd
