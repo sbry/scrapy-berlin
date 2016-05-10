@@ -66,6 +66,7 @@ DOWNLOADER_MIDDLEWARES = {
 ITEM_PIPELINES = {
     'berlin.pipelines.PicklePipeline': 400,
     'berlin.pipelines.PublishPipeline': 401,
+    'berlin.pipelines.AugmentBerlinStreetsPipeline': 402,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
