@@ -163,6 +163,8 @@ def read_berlin_streets():
         with open(f) as fh:    
             # flatten the lists
             for street in json.load(fh):
+                # like go: _ is thowaway
+                street['district'], _ = os.path.splitext(os.path.basename(f))
                 yield street 
             fh.close()
 def match_street(item, street):
@@ -218,7 +220,7 @@ class AugmentBerlinStreetsPipeline():
         import multiprocessing
         # seems the ideal value
         processes = multiprocessing.cpu_count()
-        p = multiprocessing.Pool(processes = processes)
+        p = multiprocessing.Pool(processes=processes)
         boolean_matches = p.map(match_street_helper, [(item, street,) for street in self.streets])
         # we need to return those streets where the grep returned true
         # first time i use zip: quite a success
