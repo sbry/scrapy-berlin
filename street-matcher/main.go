@@ -5,49 +5,91 @@ import (
 	"fmt"
 	"html"
 	"io/ioutil"
-	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
 
-// a range of maps of strings to interface{}
-// and it must be that because there are strings and integers
-func get_streets() []map[string]interface{} {
-	json_string, err := ioutil.ReadFile("./streets.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-	// need to give the json-parser a hint what we have got
-	var data []map[string]interface{}
-	err = json.Unmarshal(json_string, &data)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return data
+// item of the json-file
+type Street struct {
+	District string `json:"district"`
+	Name     string `json:"title"`
+	// strange stuff data is mixed float and string,
+	// f, err := strconv.ParseFloat("3.1415", 64)
+	Lat interface{} `json:"lat"`
+	Lng interface{} `json:"lng"`
 }
 
-func get_article(filename string) string {
-	file_bytes, err := ioutil.ReadFile(filename)
-	if err != nil {
-		log.Fatal(err)
+func parse_filename(absolute_filename string) ([]string, string, string) {
+	basename := filepath.Base(absolute_filename)
+	dir_parts := strings.Split(filepath.Dir(absolute_filename), "/")
+	extension := filepath.Ext(basename)
+	naked_filename := strings.TrimSuffix(basename, extension)
+	return dir_parts, naked_filename, extension
+}
+
+func build_filename(dir_parts []string, naked_filename string, extension string) string {
+	return filepath.Join(strings.Join(dir_parts, "/"), naked_filename+extension)
+}
+
+// a range of maps of strings to []byte
+// and it must be that because there are strings and integers
+func read_streets() []Street {
+	var streets []Street
+	err := json.Unmarshal(read_file("streets.json"), &streets)
+	check(err)
+	return streets
+}
+
+func check(e error) {
+	if e != nil {
+		panic(e)
 	}
-	// lots of cleaning for real hits
-	file_string := strings.ToLower(html.UnescapeString(string(file_bytes)))
+}
+
+func read_file(filename string) []byte {
+	file_bytes, err := ioutil.ReadFile(filename)
+	check(err)
+	return file_bytes
+}
+
+func write_file(filename string, content []byte) {
+	dirname := filepath.Dir(filename)
+	if _, err := os.Stat(dirname); os.IsNotExist(err) {
+		os.MkdirAll(dirname, 0777)
+	}
+	err := ioutil.WriteFile(filename, content, 0644)
+	check(err)
+}
+
+func normalize_for_matching(s string) string {
 	re := regexp.MustCompile(" +")
-	return re.ReplaceAllLiteralString(file_string, " ")
+	return strings.ToLower(html.UnescapeString(re.ReplaceAllLiteralString(s, " ")))
+}
+
+func put_matched_streets(filename string, matched_streets []Street) {
+	dir_parts, naked_filename, _ := parse_filename(filename)
+	dir_parts[len(dir_parts)-1] = "streets"
+	target_filename := build_filename(dir_parts, naked_filename, ".json")
+	content, err := json.Marshal(matched_streets)
+	check(err)
+	write_file(target_filename, content)
 }
 
 func main() {
-	streets := get_streets()
+	streets := read_streets()
 	for _, filename := range os.Args[1:] {
-		article_string := get_article(string(filename))
-		for _, v := range streets {
-			street_name := strings.ToLower(v["title"].(string))
-			is_hit := strings.Contains(article_string, street_name)
-			if is_hit {
-				fmt.Println(street_name, v["district"], is_hit)
+		var matched_streets []Street
+		article_string := normalize_for_matching(string(read_file(string(filename))))
+		for _, street := range streets {
+			matched := strings.Contains(article_string, normalize_for_matching(street.Name))
+			if matched {
+				matched_streets = append(matched_streets, street)
 			}
 		}
+		fmt.Println(matched_streets)
+		put_matched_streets(filename, matched_streets)
 	}
+	fmt.Println("")
 }
