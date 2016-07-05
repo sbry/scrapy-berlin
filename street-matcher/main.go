@@ -1,5 +1,10 @@
 package main
 
+// building for ARM
+// GOOS=linux GOARCH=arm go build main.go
+// batch-call (only one in parallel on the weak ARM)
+// find $archiveDir -type f -print0 | xargs -0 -P1 -n1000 ./main
+
 import (
 	"encoding/json"
 	"fmt"
