@@ -67,7 +67,7 @@ ITEM_PIPELINES = {
     'berlin.pipelines.PicklePipeline': 400,
     'berlin.pipelines.PublishPipeline': 410,
     'berlin.pipelines.WriteRssPipeline': 420,
-    # 'berlin.pipelines.AugmentBerlinStreetsPipeline': 421,
+    'berlin.pipelines.AugmentBerlinStreetsPipeline': 421,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
