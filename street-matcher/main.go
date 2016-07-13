@@ -8,10 +8,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/sbry/helper"
 	"html"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -26,23 +26,13 @@ type Street struct {
 	Lng interface{} `json:"lng"`
 }
 
-func parse_filename(absolute_filename string) ([]string, string, string) {
-	basename := filepath.Base(absolute_filename)
-	dir_parts := strings.Split(filepath.Dir(absolute_filename), "/")
-	extension := filepath.Ext(basename)
-	naked_filename := strings.TrimSuffix(basename, extension)
-	return dir_parts, naked_filename, extension
-}
-
-func build_filename(dir_parts []string, naked_filename string, extension string) string {
-	return filepath.Join(strings.Join(dir_parts, "/"), naked_filename+extension)
-}
-
 // a range of maps of strings to []byte
 // and it must be that because there are strings and integers
 func read_streets() []Street {
 	var streets []Street
-	err := json.Unmarshal(read_file("streets.json"), &streets)
+	file_bytes, err := ioutil.ReadFile("streets.json")
+	check(err)
+	err = json.Unmarshal(file_bytes, &streets)
 	check(err)
 	return streets
 }
@@ -53,40 +43,17 @@ func check(e error) {
 	}
 }
 
-func read_file(filename string) []byte {
-	file_bytes, err := ioutil.ReadFile(filename)
-	check(err)
-	return file_bytes
-}
-
-func write_file(filename string, content []byte) {
-	dirname := filepath.Dir(filename)
-	if _, err := os.Stat(dirname); os.IsNotExist(err) {
-		os.MkdirAll(dirname, 0777)
-	}
-	err := ioutil.WriteFile(filename, content, 0644)
-	check(err)
-}
-
 func normalize_for_matching(s string) string {
 	re := regexp.MustCompile(" +")
 	return strings.ToLower(html.UnescapeString(re.ReplaceAllLiteralString(s, " ")))
-}
-
-func put_matched_streets(filename string, matched_streets []Street) {
-	dir_parts, naked_filename, _ := parse_filename(filename)
-	dir_parts[len(dir_parts)-1] = "streets"
-	target_filename := build_filename(dir_parts, naked_filename, ".json")
-	content, err := json.Marshal(matched_streets)
-	check(err)
-	write_file(target_filename, content)
 }
 
 func main() {
 	streets := read_streets()
 	for _, filename := range os.Args[1:] {
 		var matched_streets []Street
-		article_string := normalize_for_matching(string(read_file(string(filename))))
+		helperFile := helper.NewFromPath(filename)
+		article_string := normalize_for_matching(string(helperFile.Read()))
 		for _, street := range streets {
 			matched := strings.Contains(article_string, normalize_for_matching(street.Name))
 			if matched {
@@ -94,7 +61,13 @@ func main() {
 			}
 		}
 		fmt.Println(matched_streets)
-		put_matched_streets(filename, matched_streets)
+		// prepare output
+		content, err := json.Marshal(matched_streets)
+		check(err)
+		// and write to new "collection"
+		helperFile.SetCollection("streets")
+		helperFile.SetExtension(".json")
+		helperFile.Write(content)
 	}
 	fmt.Println("")
 }
