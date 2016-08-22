@@ -49,7 +49,7 @@ class BvgSpider(scrapy.Spider):
         place_from_text, raw_time, unwanted, author, headline \
           = [ x.xpath('string(.)') for x in selector.css('.moment-info dd') ]
         parts['author'] = author.extract_first()
-        if not parts.has_key('author'):
+        if not 'author' in parts:
             parts['author'] = "-"
         parts['headline'] = headline.extract_first()
         ##

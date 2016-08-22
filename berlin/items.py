@@ -45,5 +45,4 @@ class BerlinItemLoader(ItemLoader):
     place_out = Join(separator='/')
 
 if __name__ == '__main__':
-    print BerlinItem.fields
     pass

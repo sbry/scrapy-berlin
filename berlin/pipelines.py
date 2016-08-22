@@ -63,7 +63,7 @@ class PublishPipeline(object):
             post.date = item['time']
             post.post_status = 'publish'
             post.id = self.client.call(posts.NewPost(post))
-            with open(wp_filename, 'w') as fh:
+            with open(wp_filename, 'wb') as fh:
                 pickle.dump(post, fh)
                 fh.close()
             pass
@@ -72,7 +72,6 @@ class PublishPipeline(object):
     pass
 
 import os
-import cPickle as pickle
 class PicklePipeline(object):
     @classmethod
     def from_crawler(cls, crawler):
@@ -87,7 +86,7 @@ class PicklePipeline(object):
             os.makedirs(os.path.dirname(pickle_filename))
         except OSError:
             pass
-        with open(pickle_filename, 'w') as fh:
+        with open(pickle_filename, 'wb') as fh:
             pickle.dump(item, fh)
             fh.close()
         return item
@@ -148,7 +147,7 @@ class WriteRssPipeline(object):
         # #
         # for now we just always write the file since it might be an update
         xml_filename = item.filename('xml')
-        with open(xml_filename, 'w') as fh:
+        with open(xml_filename, 'wb') as fh:
             fh.write(etree.tostring(xml, pretty_print=True))
             fh.close()
         return item

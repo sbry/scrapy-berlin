@@ -12,7 +12,6 @@ def wp_truncate():
         posts_slice = client.call(posts.GetPosts())
         if len(posts_slice):
             for p in posts_slice:
-                print p.id
                 client.call(posts.DeletePost(p.id))
         else:
             break

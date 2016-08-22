@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 ##
 #
-import os, scrapy, glob, sys
-import cPickle as pickle
+import os, scrapy, glob, sys, pickle
 import berlin.pipelines as pipelines
 ##
 #

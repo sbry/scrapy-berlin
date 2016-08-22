@@ -1,11 +1,9 @@
 /.python-version
-.scrapy/
+/.scrapy/
 *.pyc
 /scrape.sh
-/scrape.log
-/.scraperc
-/messages.log
-/.project
-/.pydevproject
-/.settings/
-/street-matcher/main
+.DS_Store
+.scraperc
+@eaDir/
+messages.log
+street-matcher/main
