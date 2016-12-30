@@ -7,3 +7,8 @@
 @eaDir/
 messages.log
 street-matcher/main
+/.project
+/.pydevproject
+/.settings/
+/radio/.scrapy/
+/scrape.log
